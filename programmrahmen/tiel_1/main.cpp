@@ -43,7 +43,13 @@ QImage loadImage(const QString &filename)
 	{
 		return loadPpm(filename);
 	}
-	return QImage(filename);
+	QImage image = QImage(filename);
+	for (int y = 0; y < image.height(); y++) {
+		image.setPixel(image.width() / 2 - 1, y, 0);
+		image.setPixel(image.width() / 2, y, 0);
+		image.setPixel(image.width() / 2 + 1, y, 0);
+	}
+	return image;
 }
 
 QByteArray computeDeflate(QByteArray::ConstIterator begin, QByteArray::ConstIterator end)
