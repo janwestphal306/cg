@@ -17,8 +17,22 @@ QImage loadPpm(const QString &filename)
 	// Exercise 1.1 (4 Points)
 	// TODO: Implement a reader to load an image in Netpbm format. Only support of P3 is required for this exercise.
 	//       In case of an error (e.g. if opening a file failed) return an invalid image (QImage.isNull() returns true in this case)
-
-	return QImage();
+	QFile inputFile(filename);
+	QImage image = QImage();
+	if (inputFile.open(QIODevice::ReadOnly))
+	{
+		QTextStream in(&inputFile);
+		if (!in.atEnd()) {
+			
+		}
+		while (!in.atEnd())
+		{
+			QString line = in.readLine();
+			// do things 
+		}
+		inputFile.close();
+	}
+	return image;
 }
 
 QImage loadImage(const QString &filename)
@@ -29,7 +43,16 @@ QImage loadImage(const QString &filename)
 	{
 		return loadPpm(filename);
 	}
-	return QImage(filename);
+	QImage image = QImage(filename);
+	for (int y = 0; y < image.height(); y++) {
+		image.setPixel(image.width() / 3 - 1, y, 0);
+		image.setPixel(image.width() / 3, y, 0);
+		image.setPixel(image.width() / 3 + 1, y, 0);
+		image.setPixel(image.width() / 2 - 1, y, 0);
+		image.setPixel(image.width() / 2, y, 0);
+		image.setPixel(image.width() / 2 + 1, y, 0);
+	}
+	return image;
 }
 
 QByteArray computeDeflate(QByteArray::ConstIterator begin, QByteArray::ConstIterator end)
