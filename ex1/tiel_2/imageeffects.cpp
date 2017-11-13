@@ -7,6 +7,35 @@
 
 namespace ImageEffects
 {
+	double gaussBlurFilter[3][3] = {
+		{ 1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
+		{ 2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0 },
+		{ 1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
+	};
+
+	double embossContrastFilter[3][3] = {
+		{ 2.0,  0, 0 },
+		{ 0, -1.0, 0 },
+		{ 0, 0, -1.0 },
+	};
+
+	double sharpnessFilter[3][3] = {
+		{ -1, -1, -1 },
+		{ -1,  9, -1 },
+		{ -1, -1, -1 },
+	};
+
+	double horizontalSobelFilter[3][3] = {
+		{ -1, 0, 1 },
+		{ -2, 0, 2 },
+		{ -1, 0, 1 },
+	};
+
+	double verticalSobelFilter[3][3] = {
+		{ -1, -2, -1 },
+		{ 0,  0,  0 },
+		{ 1,  2,  1 },
+	};
 
 	QColor pixel(const QImage & image, int x, int y)
 	{
@@ -20,6 +49,7 @@ namespace ImageEffects
 		return image.pixelColor(x, y);
 	}
 
+	// adjust rgb to scale 0 to 255
 	QColor adjustColor(int red, int green, int blue) {
 		if (red > 255) { red = 255; }
 		if (green > 255) { green = 255; }
@@ -29,9 +59,9 @@ namespace ImageEffects
 		if (blue < 0) { blue = 0; }
 		return QColor(red, green, blue);
 	}
-
 	
-	void applyMatrixToPixel(const QImage &inputImage, QImage &outputImage, int x, int y, double matrix[][3], int k) {
+	// color values red, green, blue can still have values < 0 or > 255
+	void applyColorOfPixelByMatrix(const QImage &inputImage, int x, int y, double matrix[][3], int k, int &red, int &green, int &blue) {
 		int sumRed = 0, sumGreen = 0, sumBlue = 0;
 		for (int u = -k; u <= k; u++) {
 			for (int v = -k; v <= k; v++) {
@@ -42,11 +72,18 @@ namespace ImageEffects
 				sumBlue += multiplier * pixelColor.blue();
 			}
 		}
+		red = sumRed; green = sumGreen; blue = sumBlue;
+	}
 
-		QColor newColor = adjustColor(sumRed, sumGreen, sumBlue);
+	// apply matrix to a single pixel
+	void applyMatrixToPixel(const QImage &inputImage, QImage &outputImage, int x, int y, double matrix[][3], int k) {
+		int red = 0, green = 0, blue = 0;
+		applyColorOfPixelByMatrix(inputImage, x, y, matrix, k, red, green, blue);
+		QColor newColor = adjustColor(red, green, blue);
 		outputImage.setPixelColor(x, y, newColor);
 	}
 
+	// apply a full matrix on an image
 	QImage applyMatrix(const QImage &inputImage, double matrix[][3], int size) {
 		QImage outputImage = QImage(inputImage.width(), inputImage.height(), QImage::Format_RGB32);
 
@@ -61,42 +98,22 @@ namespace ImageEffects
 		return outputImage;
 	}
 
-
-
 	QImage blur(const QImage &image)
 	{
 		//TODO: Implement Gauss filter here
-		double matrix[3][3] = {
-		{ 1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
-		{ 2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0 },
-		{ 1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
-		};
-
-		return applyMatrix(image, matrix, 3);
+		return applyMatrix(image, gaussBlurFilter, 3);
 	}
 
 	QImage hypotheticalContrast(const QImage &image)
 	{
 		//TODO: Implement Emboss filter here
-		double matrix[3][3] = {
-			{ 2.0,  0, 0 },
-			{ 0, -1.0, 0 },
-			{ 0, 0, -1.0 },
-		};
-
-		return applyMatrix(image, matrix, 3);
+		return applyMatrix(image, embossContrastFilter, 3);
 	}
 
 	QImage sharpness(const QImage &image)
 	{
 		//TODO: Implement Sharpness filter here
-		double matrix[3][3] = {
-			{ -1, -1, -1 },
-			{ -1,  9, -1 },
-			{ -1, -1, -1 },
-		};
-
-		return applyMatrix(image, matrix, 3);
+		return applyMatrix(image, sharpnessFilter, 3);
 	}
 	
 	void grayscale(QImage &image) {
@@ -115,27 +132,19 @@ namespace ImageEffects
 	QImage edgeDetection(const QImage &image)
 	{
 		//TODO: Implement Sobel operator here
-		double matrixX[3][3] = {
-			{ -1, 0, 1 },
-			{ -2, 0, 2 },
-			{ -1, 0, 1 },
-		};
-		QImage Gx = applyMatrix(image, matrixX, 3);
-		
-		double matrixY[3][3] = {
-			{ -1, -2, -1 },
-			{  0,  0,  0 },
-			{  1,  2,  1 },
-		};
-		QImage Gy = applyMatrix(image, matrixY, 3);
-	
 		QImage outputImage = QImage(image.width(), image.height(), QImage::Format_RGB32);
 
 		for (int y = 0; y < image.height(); y++) {
 			for (int x = 0; x < image.width(); x++) {
-				int red = sqrt(pow(Gx.pixelColor(x, y).red(),2) + pow(Gy.pixelColor(x, y).red(), 2));
-				int green = sqrt(pow(Gx.pixelColor(x, y).green(), 2) + pow(Gy.pixelColor(x, y).green(), 2));
-				int blue = sqrt(pow(Gx.pixelColor(x, y).blue(), 2) + pow(Gy.pixelColor(x, y).blue(), 2));
+				int redX = 0, greenX = 0, blueX = 0;
+				int redY = 0, greenY = 0, blueY = 0;
+
+				applyColorOfPixelByMatrix(image, x, y, horizontalSobelFilter, 1, redX, greenX, blueX);
+				applyColorOfPixelByMatrix(image, x, y, verticalSobelFilter, 1, redY, greenY, blueY);
+
+				int red = sqrt(pow(redX, 2) + pow(redY, 2));
+				int green = sqrt(pow(greenX, 2) + pow(greenY, 2));
+				int blue = sqrt(pow(blueX, 2) + pow(blueY, 2));
 				
 				QColor newColor = adjustColor(red, green, blue);
 				outputImage.setPixelColor(x, y, newColor); 
@@ -150,24 +159,14 @@ namespace ImageEffects
 	{
 		//TODO: Implement color based filter here. Use the sharpness filter for foreground colors and the blur filter for background colors.
 		QImage outputImage = QImage(image.width(), image.height(), QImage::Format_RGB32);
-		double blurMatrix[3][3] = {
-			{ 1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
-			{ 2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0 },
-			{ 1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
-		};
-		double sharpnessMatrix[3][3] = {
-			{ -1, -1, -1 },
-			{ -1,  9, -1 },
-			{ -1, -1, -1 },
-		};
+		
 		for (int y = 0; y < image.height(); y++) {
 			for (int x = 0; x < image.width(); x++) {
 				if (image.pixelColor(x, y).red() < 100) {
-					outputImage.setPixelColor(x, y, QColor(0,0,0));
-					applyMatrixToPixel(image, outputImage, x, y, blurMatrix, 1);
+					applyMatrixToPixel(image, outputImage, x, y, gaussBlurFilter, 1);
 				}
 				else {
-					applyMatrixToPixel(image, outputImage, x, y, sharpnessMatrix, 1);
+					applyMatrixToPixel(image, outputImage, x, y, sharpnessFilter, 1);
 				}
 			}
 		}
