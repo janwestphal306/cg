@@ -84,7 +84,7 @@ namespace ImageEffects
 	}
 
 	// apply a full matrix on an image
-	QImage applyMatrix(const QImage &inputImage, double matrix[][3], int size) {
+	QImage applyMatrixToImage(const QImage &inputImage, double matrix[][3], int size) {
 		QImage outputImage = QImage(inputImage.width(), inputImage.height(), QImage::Format_RGB32);
 
 		int k = (size - 1) / 2;
@@ -101,19 +101,19 @@ namespace ImageEffects
 	QImage blur(const QImage &image)
 	{
 		//TODO: Implement Gauss filter here
-		return applyMatrix(image, gaussBlurFilter, 3);
+		return applyMatrixToImage(image, gaussBlurFilter, 3);
 	}
 
 	QImage hypotheticalContrast(const QImage &image)
 	{
 		//TODO: Implement Emboss filter here
-		return applyMatrix(image, embossContrastFilter, 3);
+		return applyMatrixToImage(image, embossContrastFilter, 3);
 	}
 
 	QImage sharpness(const QImage &image)
 	{
 		//TODO: Implement Sharpness filter here
-		return applyMatrix(image, sharpnessFilter, 3);
+		return applyMatrixToImage(image, sharpnessFilter, 3);
 	}
 	
 	void grayscale(QImage &image) {
