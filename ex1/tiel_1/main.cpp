@@ -18,6 +18,7 @@ bool parseLineInPpm(QImage &image, int &x, int &y, int &width, int &height, QStr
 	QStringList list = line.split(" ");
 
 	for (int i = 0; i < list.size(); i++) {
+		// comment
 		if (list.at(i).startsWith("#")) {
 			return true;
 		}
@@ -87,12 +88,23 @@ QImage loadPpm(const QString &filename)
 	//       In case of an error (e.g. if opening a file failed) return an invalid image (QImage.isNull() returns true in this case)
 	QFile inputFile(filename);
 	QImage image = QImage();
-	// int width, height;
 
 	if (inputFile.open(QIODevice::ReadOnly)) {
 		QTextStream in(&inputFile);
-
-		int x = 0, y = 0, width = 0, height = 0, stateOfParsing = 0, multiplier = 0, currentColor = 0, red = 0, green = 0;
+		// x, y surpassing the image for parsing & width and height of the image
+		int x = 0, y = 0, width = 0, height = 0;
+		// current state of parsing:
+		// 0: parse file format (only allow P3)
+		// 1: parse width of image
+		// 2: parse height of image
+		// 3: parse max value -> multiplier := 255/(max value), so parsed colors are always in range 0 to 255
+		// 4: parse colors for pixels
+		int stateOfParsing = 0, multiplier = 0;
+		// current color:
+		// 0: red
+		// 1: green
+		// 2: blue and the pixel in image is colored
+		int currentColor = 0, red = 0, green = 0;
 		while (!in.atEnd()) {
 			QString line = in.readLine();
 			if (stateOfParsing == 0) {
@@ -108,76 +120,6 @@ QImage loadPpm(const QString &filename)
 		}
 	}
 	return QImage();
-	/*
-	if (inputFile.open(QIODevice::ReadOnly))
-	{
-		QTextStream in(&inputFile);
-		int i = 0;
-		while (!in.atEnd() && i <= 2) {
-			// skip comments
-			QString line = in.readLine().simplified();
-			QStringList list = line.split(" ");
-			switch (i) {
-			case 0:
-				if (line.toStdString() != "P3") {
-					return QImage();
-				}
-				break;
-
-			case 1:
-				width = list.at(0).toInt();
-				height = list.at(1).toInt();
-				image = QImage(width, height, QImage::Format_RGB32);
-				break;
-			case 2:
-				// maximum value for each pixel, do nothing for now
-				
-				break;
-			}
-			i++;
-		}
-		if (i <= 2) {
-			return QImage();
-		}
-		int x = 0, y = 0, color_index = 0, red, green, blue;
-		int line_index = 0;
-		while (!in.atEnd())
-		{
-			line_index++;
-			if (y >= image.height()) {
-				return QImage();
-			}
-			QString line = in.readLine().simplified();
-			QStringList list = line.split(" ");
-			for (int i = 0; i < list.size(); i++) {
-				if (line_index < 5) {
-					bool valid;
-					std::cout << list.at(i).toInt(&valid) << " ";
-					std::cout << valid << std::endl;
-				}
-				switch (color_index) {
-					case 0: red = list.at(i).toInt(); break;
-					case 1:	green = list.at(i).toInt(); break;
-					case 2:	blue = list.at(i).toInt(); 
-						QRgb value = qRgb(red, green, blue);
-						image.setPixel(x, y, value);
-						// std::cout << x << " " << y << " " << red << " " << green << " " << " " << blue << std::endl;
-						x++;
-						if (x >= image.width()) {
-							y++; x = 0;
-						}
-						break;
-				}
-				color_index++;
-				if (color_index > 2) {
-					color_index = 0;
-				}
-			}
-		}
-		inputFile.close();
-	}
-	return image;
-	*/
 }
 
 QImage loadImage(const QString &filename)
@@ -222,6 +164,77 @@ bool storePng(const QString &filename, const QImage &image)
 	//       Use a QDataStream with BigEndian-ByteOrder. Care that you are using types that QDataStream is supporting. E.g. you must cast an int to quint8, if you want to store only a single byte.
 	//       Use computeDeflate() to compress data and computeCRC() to calculate checksum.
 	//       Return true in case storing PNG was successfull, otherwise false;
+	QFile file(filename);
+	if (!file.open(QIODevice::WriteOnly)) {
+		return false;
+	}
+	QDataStream out(&file);
+
+	// Write the "magic number"
+	out << (quint8)137 << (quint8)80 << (quint8)78 << (quint8)71 << (quint8)13 << (quint8)10 << (quint8)26 << (quint8)10;
+
+	QByteArray header;
+	QDataStream headerStream(&header, QIODevice::WriteOnly);
+
+	//IHDR Header
+	out << (quint32)13;
+	headerStream << (quint8)0x49;
+	headerStream << (quint8)0x48;
+	headerStream << (quint8)0x44;
+	headerStream << (quint8)0x52;
+
+	//Image Data
+	headerStream << (quint32)image.width();
+	headerStream << (quint32)image.height();
+	headerStream << (quint8)8; // bit depth
+	headerStream << (quint8)2; // color type
+	headerStream << (quint8)0; // compression method
+	headerStream << (quint8)0; // filter method
+	headerStream << (quint8)0; // interlace method
+
+	unsigned long headerCrc = computeCRC(header);
+	out.writeRawData(header, header.size());
+	out << (quint32)headerCrc;
+
+	//IDAT
+	QByteArray idat;
+
+	int size = image.width()*image.height() * 3;
+	out << (quint32)size;
+
+	idat.append("IDAT");
+
+	QByteArray rawData;
+	QDataStream rawStream(&rawData, QIODevice::WriteOnly);
+
+	for (int y = 0; y < image.height(); y++) {
+		rawStream << (quint8)0; // leading 0 per row
+		for (int x = 0; x < image.width(); x++) {
+			QColor pixelColor = image.pixelColor(x, y);
+			rawStream << (quint8)pixelColor.red();
+			rawStream << (quint8)pixelColor.green();
+			rawStream << (quint8)pixelColor.blue();
+		}
+	}
+	rawData = computeDeflate(rawData.begin(), rawData.end());
+	idat.append(rawData);
+
+	unsigned long idatCrc = computeCRC(idat);
+	out.writeRawData(idat, idat.size());
+	out << (quint32)idatCrc;
+
+	// IEND
+	QByteArray iend;
+	QDataStream iendStream(&iend, QIODevice::WriteOnly);
+
+	out << (quint32)0;
+	iend.append("IEND");
+
+	unsigned long iendCrc = computeCRC(iend);
+	out.writeRawData(iend, iend.size());
+	out << (quint32)iendCrc;
+
+	file.close();
 
 	return true;
 }
