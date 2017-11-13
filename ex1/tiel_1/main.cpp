@@ -258,6 +258,18 @@ void applyDesaturation(QImage &image)
 {
 	// Exercise 1.4 (1 Point)
 	// TODO: Implement desaturation on each pixel
+	double intensity = 0.5;
+	for (int y = 0; y < image.height(); y++) {
+		for (int x = 0; x < image.width(); x++) {
+			QColor rgb = image.pixelColor(x, y);
+			double red = rgb.red(), green = rgb.green(), blue = rgb.blue();
+			int grey = int(0.299 * red + 0.587 * green + 0.114 * blue);
+			red = grey * intensity + red * (1 - intensity);
+			green = grey * intensity + green * (1 - intensity);
+			blue = grey * intensity + blue * (1 - intensity);
+			image.setPixelColor(x, y, QColor(red, green, blue));
+		}
+	}
 }
 
 void applyQuantizationErrorToPixel(QImage &image, int x, int y, int quantError, double multiplier) {
