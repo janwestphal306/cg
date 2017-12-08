@@ -9,6 +9,8 @@
 #include "util/polygonaldrawable.h"
 #include "util/unitcube.h"
 
+#include <iostream>
+
 class Exercise31 : public AbstractExercise
 {
 public:
@@ -36,7 +38,51 @@ QMatrix4x4 Exercise31::calculateModelTransform(const PolygonalDrawable * const d
 {
 	// TODO: Calculate manipulation matrix here.
 	
-	return QMatrix4x4();
+	
+	QVector<QVector3D> vertices = drawable->vertices();
+	float minX = vertices.at(0).x(), maxX = vertices.at(0).x();
+	float minY = vertices.at(0).y(), maxY = vertices.at(0).y();
+	float minZ = vertices.at(0).z(), maxZ = vertices.at(0).z();
+	for (QVector3D vec : vertices) {
+		if (vec.x() < minX) {
+			minX = vec.x();
+		}
+		else if (vec.x() > maxX) {
+			maxX = vec.x();
+		}
+		if (vec.y() < minY) {
+			minY = vec.y();
+		}
+		else if (vec.y() > maxY) {
+			maxY = vec.y();
+		}
+		if (vec.z() < minZ) {
+			minZ = vec.z();
+		}
+		else if (vec.z() > maxZ) {
+			maxZ = vec.z();
+		}
+	}
+
+	std::cout << minX << " " << minY << " " << minZ << std::endl;
+	std::cout << maxX << " " << maxY << " " << maxZ << std::endl;
+	float midX = maxX - ((maxX - minX) / 2);
+	float midY = maxY - (maxY - minY) / 2;
+	float midZ = maxZ - (maxZ - minZ) / 2;
+	std::cout << midX << " " << midY << " " << midZ << std::endl;
+
+	float maxDistance = maxX - minX;
+	float scale = 1.0f / maxDistance;
+
+	std::cout << maxDistance << " " << scale << std::endl;
+	QMatrix4x4 transform;
+	
+	QVector3D translation(-midX, -midY, -midZ);
+	transform.translate(translation);
+	//transform.scale(scale, scale, scale);
+	
+
+	return transform;
 }
 
 Exercise31::Exercise31()
