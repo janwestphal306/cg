@@ -37,42 +37,35 @@ protected:
 QMatrix4x4 Exercise31::calculateModelTransform(const PolygonalDrawable * const drawable)
 {
 	// TODO: Calculate manipulation matrix here.
-	QVector<QVector3D> vertices = drawable->vertices();
-	float minX = vertices.at(0).x(), maxX = vertices.at(0).x();
-	float minY = vertices.at(0).y(), maxY = vertices.at(0).y();
-	float minZ = vertices.at(0).z(), maxZ = vertices.at(0).z();
-	for (QVector3D vec : vertices) {
-		minX = std::min(vec.x(), minX);
-		minY = std::min(vec.y(), minY);
-		minZ = std::min(vec.z(), minZ);
-
-		maxX = std::max(vec.x(), maxX);
-		maxY = std::max(vec.y(), maxY);
-		maxZ = std::max(vec.z(), maxZ);
-	}
-
-	std::cout << "Minima: " << minX << " " << minY << " " << minZ << std::endl;
-	std::cout << "Maxima: " << maxX << " " << maxY << " " << maxZ << std::endl;
-
-	float scaleX = 1 / (maxX - minX);
-	float scaleY = 1 / (maxY - minY);
-	float scaleZ = 1 / (maxZ - minZ);
-
-	std::cout << "Scale: " << scaleX << " " << scaleY << " " << scaleZ << std::endl;
 	
-	float minScale = std::min(std::min(scaleX, scaleY), scaleZ);
-	std::cout << minScale << std::endl;
+	QVector<QVector3D> vertices = drawable->vertices();
+
+	QVector3D minima(vertices.at(0).x(), vertices.at(0).y(), vertices.at(0).z());
+	QVector3D maxima(minima);
+	for (QVector3D vec : vertices) {
+		minima.setX(std::min(vec.x(), minima.x()));
+		minima.setY(std::min(vec.y(), minima.y()));
+		minima.setZ(std::min(vec.z(), minima.z()));
+
+		maxima.setX(std::max(vec.x(), maxima.x()));
+		maxima.setY(std::max(vec.y(), maxima.y()));
+		maxima.setZ(std::max(vec.z(), maxima.z()));
+	}
+	qDebug() << "min: " << minima;
+	qDebug() << "max: " << maxima;
+
+	QVector3D delta = maxima - minima;
+	float maxDelta = std::max(std::max(delta.x(), delta.y()), delta.z());
+	qDebug() << "Delta: " << delta << " max Delta: " << maxDelta;
 
 	QMatrix4x4 transform;
-	
-	transform.translate(-0.5f, -0.5f, -0.5f);
-	transform.scale(minScale);
-	transform.translate(-minX, -minY, -minZ);
+	float uniformScale = 1 / maxDelta;
+	transform.scale(uniformScale);
 
-	float *data = transform.data();
-	for (int i = 0; i < 16; i++) {
-		std::cout << data[i] << " ";
-	}
+	QVector3D center = (maxima + minima) / 2;
+	transform.translate(-center);
+	
+	qDebug() << transform;
 	return transform;
 }
 

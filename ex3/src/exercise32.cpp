@@ -176,8 +176,7 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 		
 		float currentFramePercent = float(currentFrame) / maxFrame;
 		int routes = m_path.size() - 1;
-		int framesPerRoute = maxFrame / routes;
-
+		
 		int currentControlPoint = currentFramePercent * routes;
 		/*7
 		int nextControlPoint = currentFramePercent * routes;
@@ -190,6 +189,7 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 		QVector3D toPoint(m_path.at(currentControlPoint + 1));
 		QVector3D directionToNextControlNode(toPoint - fromPoint);
 
+		int framesPerRoute = maxFrame / routes;
 		int frameInCurrentRoute = currentFrame % (framesPerRoute + 1);
 		float traveledRoutePercent = float(frameInCurrentRoute) / framesPerRoute;
 
@@ -200,7 +200,30 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 		transform.rotate(rotation);
 	}
 	else if (m_translationMode == TranslationMode::ConstantSpeed) {
-		
+		float framesPerLength = float(maxFrame) / m_pathLength;
+
+		float lengthPerFrame = float(m_pathLength) / maxFrame;
+		float passedLength = currentFrame * lengthPerFrame;
+
+		float lengthRoutes = 0.0f;
+		int currentControlPoint = 0;
+		for (; currentControlPoint < m_path.size()-1; currentControlPoint++) {
+			float lengthRoute = m_path.at(currentControlPoint).distanceToPoint(m_path.at(currentControlPoint + 1));
+			if (lengthRoutes + lengthRoute > passedLength) break;
+			lengthRoutes += lengthRoute;
+		}
+
+		QVector3D fromPoint(m_path.at(currentControlPoint));
+		QVector3D toPoint(m_path.at(currentControlPoint + 1));
+		QVector3D directionToNextControlNode(toPoint - fromPoint);
+
+		float lengthPassedOnCurrentRoute = passedLength - lengthRoutes;
+		float newlengthPassedOnCurrentRoute = lengthPerFrame + lengthPassedOnCurrentRoute;
+		QVector3D stepOnRoute = directionToNextControlNode.normalized() * newlengthPassedOnCurrentRoute;
+		transform.translate(fromPoint + stepOnRoute);
+
+		QQuaternion rotation = QQuaternion::fromDirection(directionToNextControlNode, QVector3D(0, 1, 0));
+		transform.rotate(rotation);
 	}
 	return transform;
 }
