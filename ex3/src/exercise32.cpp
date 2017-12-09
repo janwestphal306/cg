@@ -18,6 +18,8 @@
 #include "util/glviewer.h"
 #include "util/abstractexercise.h"
 
+#include <iostream>
+
 enum class TranslationMode
 {
 	ConstantTime,
@@ -168,8 +170,39 @@ bool Exercise32::onKeyPressed(QKeyEvent* keyEvent)
 QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFrame)
 {
 	// TODO: Calculate manipulation matrix here.
+	QMatrix4x4 transform;
+	if (m_translationMode == TranslationMode::ConstantTime) {
+		// static int currentControlPoint = -1;
+		
+		float currentFramePercent = float(currentFrame) / maxFrame;
+		int routes = m_path.size() - 1;
+		int framesPerRoute = maxFrame / routes;
 
-	return QMatrix4x4();
+		int currentControlPoint = currentFramePercent * routes;
+		/*7
+		int nextControlPoint = currentFramePercent * routes;
+		if (nextControlPoint != currentControlPoint) {
+			currentControlPoint = nextControlPoint;
+			std::cout << currentFrame << " " << maxFrame << " " << currentControlPoint << " " << m_path.at(currentControlPoint).x() << " " << m_path.at(currentControlPoint).y() << " " << m_path.at(currentControlPoint).z() << std::endl;
+		}
+		*/
+		QVector3D fromPoint(m_path.at(currentControlPoint));
+		QVector3D toPoint(m_path.at(currentControlPoint + 1));
+		QVector3D directionToNextControlNode(toPoint - fromPoint);
+
+		int frameInCurrentRoute = currentFrame % (framesPerRoute + 1);
+		float traveledRoutePercent = float(frameInCurrentRoute) / framesPerRoute;
+
+		QVector3D stepOnRoute = traveledRoutePercent * directionToNextControlNode;
+		transform.translate(fromPoint + stepOnRoute);
+
+		QQuaternion rotation = QQuaternion::fromDirection(directionToNextControlNode, QVector3D(0, 1, 0));
+		transform.rotate(rotation);
+	}
+	else if (m_translationMode == TranslationMode::ConstantSpeed) {
+		
+	}
+	return transform;
 }
 
 const QString Exercise32::hints() const

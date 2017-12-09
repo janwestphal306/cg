@@ -37,51 +37,42 @@ protected:
 QMatrix4x4 Exercise31::calculateModelTransform(const PolygonalDrawable * const drawable)
 {
 	// TODO: Calculate manipulation matrix here.
-	
-	
 	QVector<QVector3D> vertices = drawable->vertices();
 	float minX = vertices.at(0).x(), maxX = vertices.at(0).x();
 	float minY = vertices.at(0).y(), maxY = vertices.at(0).y();
 	float minZ = vertices.at(0).z(), maxZ = vertices.at(0).z();
 	for (QVector3D vec : vertices) {
-		if (vec.x() < minX) {
-			minX = vec.x();
-		}
-		else if (vec.x() > maxX) {
-			maxX = vec.x();
-		}
-		if (vec.y() < minY) {
-			minY = vec.y();
-		}
-		else if (vec.y() > maxY) {
-			maxY = vec.y();
-		}
-		if (vec.z() < minZ) {
-			minZ = vec.z();
-		}
-		else if (vec.z() > maxZ) {
-			maxZ = vec.z();
-		}
+		minX = std::min(vec.x(), minX);
+		minY = std::min(vec.y(), minY);
+		minZ = std::min(vec.z(), minZ);
+
+		maxX = std::max(vec.x(), maxX);
+		maxY = std::max(vec.y(), maxY);
+		maxZ = std::max(vec.z(), maxZ);
 	}
 
-	std::cout << minX << " " << minY << " " << minZ << std::endl;
-	std::cout << maxX << " " << maxY << " " << maxZ << std::endl;
-	float midX = maxX - ((maxX - minX) / 2);
-	float midY = maxY - (maxY - minY) / 2;
-	float midZ = maxZ - (maxZ - minZ) / 2;
-	std::cout << midX << " " << midY << " " << midZ << std::endl;
+	std::cout << "Minima: " << minX << " " << minY << " " << minZ << std::endl;
+	std::cout << "Maxima: " << maxX << " " << maxY << " " << maxZ << std::endl;
 
-	float maxDistance = maxX - minX;
-	float scale = 1.0f / maxDistance;
+	float scaleX = 1 / (maxX - minX);
+	float scaleY = 1 / (maxY - minY);
+	float scaleZ = 1 / (maxZ - minZ);
 
-	std::cout << maxDistance << " " << scale << std::endl;
+	std::cout << "Scale: " << scaleX << " " << scaleY << " " << scaleZ << std::endl;
+	
+	float minScale = std::min(std::min(scaleX, scaleY), scaleZ);
+	std::cout << minScale << std::endl;
+
 	QMatrix4x4 transform;
 	
-	QVector3D translation(-midX, -midY, -midZ);
-	transform.translate(translation);
-	//transform.scale(scale, scale, scale);
-	
+	transform.translate(-0.5f, -0.5f, -0.5f);
+	transform.scale(minScale);
+	transform.translate(-minX, -minY, -minZ);
 
+	float *data = transform.data();
+	for (int i = 0; i < 16; i++) {
+		std::cout << data[i] << " ";
+	}
 	return transform;
 }
 
