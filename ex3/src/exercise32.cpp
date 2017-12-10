@@ -171,20 +171,11 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 {
 	// TODO: Calculate manipulation matrix here.
 	QMatrix4x4 transform;
+	int routes = m_path.size() - 1;
 	if (m_translationMode == TranslationMode::ConstantTime) {
-		// static int currentControlPoint = -1;
-		
 		float currentFramePercent = float(currentFrame) / maxFrame;
-		int routes = m_path.size() - 1;
-		
 		int currentControlPoint = currentFramePercent * routes;
-		/*7
-		int nextControlPoint = currentFramePercent * routes;
-		if (nextControlPoint != currentControlPoint) {
-			currentControlPoint = nextControlPoint;
-			std::cout << currentFrame << " " << maxFrame << " " << currentControlPoint << " " << m_path.at(currentControlPoint).x() << " " << m_path.at(currentControlPoint).y() << " " << m_path.at(currentControlPoint).z() << std::endl;
-		}
-		*/
+
 		QVector3D fromPoint(m_path.at(currentControlPoint));
 		QVector3D toPoint(m_path.at(currentControlPoint + 1));
 		QVector3D directionToNextControlNode(toPoint - fromPoint);
@@ -215,14 +206,57 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 
 		QVector3D fromPoint(m_path.at(currentControlPoint));
 		QVector3D toPoint(m_path.at(currentControlPoint + 1));
-		QVector3D directionToNextControlNode(toPoint - fromPoint);
+		QVector3D directionToNextPoint(toPoint - fromPoint);
 
 		float lengthPassedOnCurrentRoute = passedLength - lengthRoutes;
-		float newlengthPassedOnCurrentRoute = lengthPerFrame + lengthPassedOnCurrentRoute;
-		QVector3D stepOnRoute = directionToNextControlNode.normalized() * newlengthPassedOnCurrentRoute;
+		float newLengthPassedOnCurrentRoute = lengthPerFrame + lengthPassedOnCurrentRoute;
+		QVector3D stepOnRoute = directionToNextPoint.normalized() * newLengthPassedOnCurrentRoute;
 		transform.translate(fromPoint + stepOnRoute);
 
-		QQuaternion rotation = QQuaternion::fromDirection(directionToNextControlNode, QVector3D(0, 1, 0));
+		QQuaternion rotation;
+		if (newLengthPassedOnCurrentRoute > 0.8f * directionToNextPoint.length() && currentControlPoint + 2 <= routes) {
+			QVector3D afterwardsPoint(m_path.at(currentControlPoint + 2));
+			QVector3D diretionToAfterwardsPoint(afterwardsPoint - toPoint);
+			
+			float rotationLengthOnAfterwardsDirection = 0.2f * diretionToAfterwardsPoint.length();
+			float rotationLengthOnNextDirection = 0.2f * directionToNextPoint.length();
+			float summedLengthForRotation = rotationLengthOnAfterwardsDirection + rotationLengthOnNextDirection;
+			float spentRotationLength = newLengthPassedOnCurrentRoute - 0.8f * directionToNextPoint.length();
+			float fullfilledRotation = spentRotationLength / summedLengthForRotation;
+
+			QVector3D startFacingPoint = toPoint + directionToNextPoint;
+			QVector3D facingLine = afterwardsPoint - startFacingPoint;
+			QVector3D facingPoint = startFacingPoint + fullfilledRotation * facingLine;
+			QVector3D nextPosition = fromPoint + stepOnRoute;
+			QVector3D facingDirection = facingPoint - nextPosition;
+
+			rotation = QQuaternion::fromDirection(facingDirection, QVector3D(0, 1, 0));
+			qDebug() << rotation.toEulerAngles();
+		}
+		else if (newLengthPassedOnCurrentRoute < 0.2f * directionToNextPoint.length() && currentControlPoint >= 1) {
+			QVector3D beforePoint(m_path.at(currentControlPoint - 1));
+			QVector3D diretionToFromPoint(fromPoint - beforePoint);
+
+			float rotationLengthOnBeforeDirection = 0.2f * diretionToFromPoint.length();
+			float rotationLengthOnNextDirection = 0.2f * directionToNextPoint.length();
+			float summedLengthForRotation = rotationLengthOnBeforeDirection + rotationLengthOnNextDirection;
+			float spentRotationLength = newLengthPassedOnCurrentRoute + rotationLengthOnBeforeDirection;
+			float fullfilledRotation = spentRotationLength / summedLengthForRotation;
+
+			QVector3D startFacingPoint = fromPoint + diretionToFromPoint;
+			QVector3D facingLine = toPoint - startFacingPoint;
+			QVector3D facingPoint = startFacingPoint + fullfilledRotation * facingLine;
+			QVector3D nextPosition = fromPoint + stepOnRoute;
+			QVector3D facingDirection = facingPoint - nextPosition;
+
+			rotation = QQuaternion::fromDirection(facingDirection, QVector3D(0, 1, 0));
+			qDebug() << rotation.toEulerAngles();
+		}
+		else {
+			rotation = QQuaternion::fromDirection(directionToNextPoint, QVector3D(0, 1, 0));
+			qDebug() << rotation.toEulerAngles();
+		}
+
 		transform.rotate(rotation);
 	}
 	return transform;
