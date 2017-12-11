@@ -191,8 +191,6 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 		transform.rotate(rotation);
 	}
 	else if (m_translationMode == TranslationMode::ConstantSpeed) {
-		float framesPerLength = float(maxFrame) / m_pathLength;
-
 		float lengthPerFrame = float(m_pathLength) / maxFrame;
 		float passedLength = currentFrame * lengthPerFrame;
 
@@ -228,7 +226,6 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 			QVector3D endAngle = QQuaternion::fromDirection(directionToAfterwardsPoint, QVector3D(0, 1, 0)).toEulerAngles();
 
 			QVector3D fullRotation = endAngle - startAngle;
-			QVector3D compareRotation = -fullRotation;
 			for (int i = 0; i < 2; i++) {
 				float r = fullRotation[i];
 				// from negative angle to positive angle the rotation a
