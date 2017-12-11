@@ -69,7 +69,7 @@ Exercise32::Exercise32()
         << 5 * QVector3D(0.6f, 0.0f, 0.9f)
         << 5 * QVector3D(0.7f, 0.0f, 0.85f)
         << 5 * QVector3D(0.65f, 0.0f, 0.65f)
-        << 5 * QVector3D(0.6f, 0.0f, -0.3f)
+		<< 5 * QVector3D(0.6f, 0.0f, -0.3f)
         ;
 
     for (auto it = m_path.begin(); it+1 != m_path.end(); ++it)
@@ -216,45 +216,61 @@ QMatrix4x4 Exercise32::computeTransformationMatrix(int currentFrame, int maxFram
 		QQuaternion rotation;
 		if (newLengthPassedOnCurrentRoute > 0.8f * directionToNextPoint.length() && currentControlPoint + 2 <= routes) {
 			QVector3D afterwardsPoint(m_path.at(currentControlPoint + 2));
-			QVector3D diretionToAfterwardsPoint(afterwardsPoint - toPoint);
+			QVector3D directionToAfterwardsPoint(afterwardsPoint - toPoint);
 			
-			float rotationLengthOnAfterwardsDirection = 0.2f * diretionToAfterwardsPoint.length();
+			float rotationLengthOnAfterwardsDirection = 0.2f * directionToAfterwardsPoint.length();
 			float rotationLengthOnNextDirection = 0.2f * directionToNextPoint.length();
 			float summedLengthForRotation = rotationLengthOnAfterwardsDirection + rotationLengthOnNextDirection;
 			float spentRotationLength = newLengthPassedOnCurrentRoute - 0.8f * directionToNextPoint.length();
 			float fullfilledRotation = spentRotationLength / summedLengthForRotation;
 
-			QVector3D startFacingPoint = toPoint + directionToNextPoint;
-			QVector3D facingLine = afterwardsPoint - startFacingPoint;
-			QVector3D facingPoint = startFacingPoint + fullfilledRotation * facingLine;
-			QVector3D nextPosition = fromPoint + stepOnRoute;
-			QVector3D facingDirection = facingPoint - nextPosition;
+			QVector3D startAngle = QQuaternion::fromDirection(directionToNextPoint, QVector3D(0, 1, 0)).toEulerAngles();
+			QVector3D endAngle = QQuaternion::fromDirection(directionToAfterwardsPoint, QVector3D(0, 1, 0)).toEulerAngles();
 
-			rotation = QQuaternion::fromDirection(facingDirection, QVector3D(0, 1, 0));
-			qDebug() << rotation.toEulerAngles();
+			QVector3D fullRotation = endAngle - startAngle;
+			QVector3D compareRotation = -fullRotation;
+			for (int i = 0; i < 2; i++) {
+				float r = fullRotation[i];
+				// from negative angle to positive angle the rotation a
+				if (r > 180 && r < 360) { fullRotation[i] -= 360; }
+				// from positive angle to negative angle
+				else if (r > -360 && r < -180) { fullRotation[i] += 360; }
+			}
+
+			QVector3D deltaRotation = startAngle + (fullRotation * fullfilledRotation);
+			rotation = QQuaternion::fromEulerAngles(deltaRotation);
+			qDebug() << rotation;
 		}
 		else if (newLengthPassedOnCurrentRoute < 0.2f * directionToNextPoint.length() && currentControlPoint >= 1) {
 			QVector3D beforePoint(m_path.at(currentControlPoint - 1));
-			QVector3D diretionToFromPoint(fromPoint - beforePoint);
+			QVector3D directionToFromPoint(fromPoint - beforePoint);
 
-			float rotationLengthOnBeforeDirection = 0.2f * diretionToFromPoint.length();
+			float rotationLengthOnBeforeDirection = 0.2f * directionToFromPoint.length();
 			float rotationLengthOnNextDirection = 0.2f * directionToNextPoint.length();
 			float summedLengthForRotation = rotationLengthOnBeforeDirection + rotationLengthOnNextDirection;
 			float spentRotationLength = newLengthPassedOnCurrentRoute + rotationLengthOnBeforeDirection;
 			float fullfilledRotation = spentRotationLength / summedLengthForRotation;
 
-			QVector3D startFacingPoint = fromPoint + diretionToFromPoint;
-			QVector3D facingLine = toPoint - startFacingPoint;
-			QVector3D facingPoint = startFacingPoint + fullfilledRotation * facingLine;
-			QVector3D nextPosition = fromPoint + stepOnRoute;
-			QVector3D facingDirection = facingPoint - nextPosition;
+			QVector3D startAngle = QQuaternion::fromDirection(directionToFromPoint, QVector3D(0, 1, 0)).toEulerAngles();
+			QVector3D endAngle = QQuaternion::fromDirection(directionToNextPoint, QVector3D(0, 1, 0)).toEulerAngles();
 
-			rotation = QQuaternion::fromDirection(facingDirection, QVector3D(0, 1, 0));
-			qDebug() << rotation.toEulerAngles();
+			QVector3D fullRotation = endAngle - startAngle;
+			QVector3D compareRotation = -fullRotation;
+			for (int i = 0; i < 2; i++) {
+				float r = fullRotation[i];
+				// from negative angle to positive angle the rotation a
+				if (r > 180 && r < 360) { fullRotation[i] -= 360; }
+				// from positive angle to negative angle
+				else if (r > -360 && r < -180) { fullRotation[i] += 360; }
+			}
+
+			QVector3D deltaRotation = startAngle + (fullRotation * fullfilledRotation);
+			rotation = QQuaternion::fromEulerAngles(deltaRotation);
+			qDebug() << rotation;
 		}
 		else {
 			rotation = QQuaternion::fromDirection(directionToNextPoint, QVector3D(0, 1, 0));
-			qDebug() << rotation.toEulerAngles();
+			qDebug() << rotation;
 		}
 
 		transform.rotate(rotation);
