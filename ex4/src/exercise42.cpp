@@ -211,7 +211,7 @@ void Exercise52::render()
 void Exercise52::computeBoundingBox()
 {
     //TODO: Compute the Axis-Aligned Bounding Box for the moving elements and replace the QRectF values below
-	float minX = 2.0*PLANEBOUNDS, minY = 2.0*PLANEBOUNDS, maxX = -PLANEBOUNDS, maxY = -PLANEBOUNDS;
+	float minX = PLANEBOUNDS, minY = PLANEBOUNDS, maxX = -PLANEBOUNDS, maxY = -PLANEBOUNDS;
 	for (const auto &sphere : m_sphereList) {
 		if (sphere->GetPositionX() < minX) {
 			minX = sphere->GetPositionX();
@@ -226,8 +226,8 @@ void Exercise52::computeBoundingBox()
 			maxY = sphere->GetPositionY();
 		}
 	}
-    m_boundingBox = QRectF(minX, minY, maxX, maxY);
-	qDebug() << m_boundingBox;
+    m_boundingBox = QRectF(minX-5, minY-5, maxX-minX+10, maxY-minY+10);
+	// qDebug() << m_boundingBox;
 }
 
 void Exercise52::updateCamera()
@@ -236,16 +236,89 @@ void Exercise52::updateCamera()
 	float midX = m_boundingBox.x() + 0.5f * m_boundingBox.width();
 	float midY = m_boundingBox.y() + 0.5f * m_boundingBox.height();
 	m_camera->setCenter(QVector3D(midX, 0.0f, midY));
-	m_camera->setFovy(90.0);
+	
+	
     if (m_fromTop)
     {
         //TODO: Adjust the camera parameters for camera pos 1 (top-view)
-        // m_camera->setFovy(100.0);
+		float radLeftX = abs(atan(m_boundingBox.left() / 90.0f));
+		float degLeftX = radLeftX * (180.0 / 3.141592653);
+
+		float radRightX = abs(atan(m_boundingBox.right() / 90.0f));
+		float degRightX = radRightX * (180.0 / 3.141592653);
+
+		float radLeftY = abs(atan(m_boundingBox.top() / 90.0f));
+		float degLeftY = radLeftY * (180.0 / 3.141592653);
+
+		float radRightY = abs(atan(m_boundingBox.bottom() / 90.0f));
+		float degRightY = radRightY * (180.0 / 3.141592653);
+		
+		if (m_boundingBox.left() < 0 && m_boundingBox.right() > 0) {
+			float fovX = degLeftX + degRightX;
+			float fovY = degLeftY + degRightY;
+			float fov = std::max(fovX, fovY);
+			qDebug() << fov;
+			m_camera->setFovy(fov);
+		}
+		else {
+			float fovX = abs(degLeftX - degRightX);
+			float fovY = abs(degLeftY - degRightY);
+			float fov = std::max(fovX, fovY);
+			qDebug() << fov;
+			m_camera->setFovy(fov);
+		}
+		// float radians = abs(atan((0.5f * max) / 90.0f));
+		// float fov = radians * (180.0 / 3.141592653) * 2.0;
+		
+		/*
+		float fovX = 0, fovY = 0;
+		if (m_boundingBox.left() < 0 && m_boundingBox.right() > 0) {
+			float fovX = degLeftX + degRightX;
+		}
+		else {
+			float fovX = abs(degLeftX - degRightX);
+		}
+		if (m_boundingBox.top() < 0 && m_boundingBox.bottom() > 0) {
+			float fovY = degLeftY + degRightY;
+		}
+		else {
+			float fovY = abs(degLeftY - degRightY);	
+		}
+		
+		float fov = std::max(fovX, fovY);
+		qDebug() << fov;
+		m_camera->setFovy(fov);
+		*/
     }
     else
     {
         //TODO: Adjust the camera parameters for camera pos 2 (front-right-view)
-        //m_camera->setFovy(100.0);
+		float radLeftX = abs(atan(m_boundingBox.left() / 90.0f));
+		float degLeftX = radLeftX * (180.0 / 3.141592653);
+
+		float radRightX = abs(atan(m_boundingBox.right() / 90.0f));
+		float degRightX = radRightX * (180.0 / 3.141592653);
+
+		float radLeftY = abs(atan(m_boundingBox.top() / 90.0f));
+		float degLeftY = radLeftY * (180.0 / 3.141592653);
+
+		float radRightY = abs(atan(m_boundingBox.bottom() / 90.0f));
+		float degRightY = radRightY * (180.0 / 3.141592653);
+		/*
+		if (m_boundingBox.left() < 0 && m_boundingBox.right() > 0) {
+			float fovX = degLeftX + degRightX;
+			float fovY = degLeftY + degRightY;
+			float fov = std::max(fovX, fovY);
+			qDebug() << fov;
+			m_camera->setFovy(fov);
+		}*/
+		 {
+			float fovX = abs(degLeftX - degRightX);
+			float fovY = abs(degLeftY - degRightY);
+			float fov = std::max(fovX, fovY);
+			qDebug() << fov;
+			m_camera->setFovy(fov);
+		}
     }
 }
 
