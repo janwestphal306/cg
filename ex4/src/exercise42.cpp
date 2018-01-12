@@ -237,7 +237,7 @@ void Exercise52::updateCamera()
 	float midY = m_boundingBox.y() + 0.5f * m_boundingBox.height();
 	m_camera->setCenter(QVector3D(midX, 0.0f, midY));
 
-    // if (m_fromTop)
+    if (m_fromTop)
     {
         //TODO: Adjust the camera parameters for camera pos 1 (top-view)
 		float radLeft = (atan(m_boundingBox.left() / 90.0f));
@@ -259,37 +259,26 @@ void Exercise52::updateCamera()
 		float fov = std::max(fovX, fovY);
 		m_camera->setFovy(fov);
     }
-    /*else
+    else
     {
         //TODO: Adjust the camera parameters for camera pos 2 (front-right-view)
-		float radLeftX = abs(atan(m_boundingBox.left() / 90.0f));
-		float degLeftX = radLeftX * (180.0 / 3.141592653);
+		const QVector3D cameraPos(80.0, 80.0, 80.0);
 
-		float radRightX = abs(atan(m_boundingBox.right() / 90.0f));
-		float degRightX = radRightX * (180.0 / 3.141592653);
+		QVector3D cameraToTopLeft(QVector3D(m_boundingBox.left(), 0.0, m_boundingBox.top()) - cameraPos);
+		QVector3D cameraToBottomRight(QVector3D(m_boundingBox.right(), 0.0, m_boundingBox.bottom()) - cameraPos);
 
-		float radLeftY = abs(atan(m_boundingBox.top() / 90.0f));
-		float degLeftY = radLeftY * (180.0 / 3.141592653);
+		float radX = acos(QVector3D::dotProduct(cameraToTopLeft, cameraToBottomRight) / (cameraToTopLeft.length() * cameraToBottomRight.length()));
+		float fovX = abs(radX) * (180.0 / 3.141592653);
 
-		float radRightY = abs(atan(m_boundingBox.bottom() / 90.0f));
-		float degRightY = radRightY * (180.0 / 3.141592653);
-		/*
-		if (m_boundingBox.left() < 0 && m_boundingBox.right() > 0) {
-			float fovX = degLeftX + degRightX;
-			float fovY = degLeftY + degRightY;
-			float fov = std::max(fovX, fovY);
-			qDebug() << fov;
-			m_camera->setFovy(fov);
-		}*//*
-		 {
-			float fovX = abs(degLeftX - degRightX);
-			float fovY = abs(degLeftY - degRightY);
-			float fov = std::max(fovX, fovY);
-			qDebug() << fov;
-			// m_camera->setFovy(fov);
-		}
-    }*/
-	// m_camera->setFovy(100);
+		QVector3D cameraToBottomLeft(QVector3D(m_boundingBox.left(), 0.0, m_boundingBox.bottom()) - cameraPos);
+		QVector3D cameraToTopRight(QVector3D(m_boundingBox.right(), 0.0, m_boundingBox.top()) - cameraPos);
+
+		float radY = acos(QVector3D::dotProduct(cameraToBottomLeft, cameraToTopRight) / (cameraToBottomLeft.length() * cameraToTopRight.length()));
+		float fovY = abs(radY) * (180.0 / 3.141592653);
+
+		float fov = std::max(fovX, fovY);
+		m_camera->setFovy(fov);
+    }
 }
 
 int main(int argc, char *argv[])
