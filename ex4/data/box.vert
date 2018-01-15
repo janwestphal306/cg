@@ -1,4 +1,5 @@
 #version 150
+#define M_PI 3.1415926535897932384626433832795
 
 uniform mat4 transform;
 uniform mat4 viewprojection;
@@ -23,6 +24,12 @@ vec3 mold(vec3 v, float moldPlateau)
     // Tip: Use overallObjectDimensions to get the extents of the x, y and z dimension
     // Tip: Keep in mind that the box is located in the coordinate system origin
     /////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// Abstand der Vertices von der xy-Ebene und Winkels zwischen dem jeweiligen Vertex (als Vektor interpretiert) und der z-Achse
+	// shape function: 0 unchanged, 1 max change
+	float s = (atan(abs(v.x),abs(v.z)) / M_PI) * 2;
+
+	v.z *= 1.0 - (1.0 - moldPlateau) * s;
 
     return v;
 }
@@ -38,8 +45,15 @@ vec3 pinch(vec3 v, float pinchPlateau)
     // Tip: Use overallObjectDimensions to get the extents of the x, y and z dimension
     // Tip: Keep in mind that the box is located in the coordinate system origin
     /////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	// shape function: 0 unchanged, 1 max change
+	// unchanged when v[1] = bottom and max change when v[1] = top
+	float bottom = -overallObjectDimensions[1] / 2.0;
+	float s = (v[1] - bottom) / overallObjectDimensions[1]; 
 
-    return v;
+	v[0] *= 1.0 - (1.0 - pinchPlateau) * s;
+
+	return v;
 }
 
 vec3 twist(vec3 v, float maxAngle)
@@ -52,6 +66,23 @@ vec3 twist(vec3 v, float maxAngle)
     // Tip: Keep in mind that the box is located in the coordinate system origin
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
+	// shape function: 0 unchanged, 1 max change
+	// unchanged when v[1] = bottom and max change when v[1] = top
+	float bottom = -overallObjectDimensions[1] / 2.0;
+	float s = (v[1] - bottom) / overallObjectDimensions[1];
+
+	// Tmp = PI * Ampli * Shape (Point->z);
+	float tmp = maxAngle * s;
+
+	// Cos = cos (Tmp); Sin = sin (Tmp); Tmp = Point->x;
+	float Cos = cos(tmp);
+	float Sin = sin(tmp);
+	tmp = v[0];
+
+	// Point->x = Cos * Tmp - Sin * Point->y;
+	v[0] = Cos * tmp - Sin * v[2];
+	// Point->y = Sin * Tmp + Cos * Point->y;
+	v[2] = Sin * tmp + Cos * v[2];
     return v;
 }
 
@@ -64,7 +95,21 @@ vec3 bend(vec3 v, float maxAngle)
     // Tip: Use overallObjectDimensions to get the extents of the x, y and z dimension
     // Tip: Keep in mind that the box is located in the coordinate system origin
     /////////////////////////////////////////////////////////////////////////////////////////////////
+	// Tmp = PI * Ampli * Shape (Point->z);
+	float bottom = -overallObjectDimensions[1] / 2.0;
+	float s = (v[1] - bottom) / overallObjectDimensions[1]; 
 
+	float Tmp = maxAngle * s;
+
+	// Cos = cos (Tmp); Sin = sin (Tmp); Tmp = Point->z;
+	float Cos = cos(Tmp);
+	float Sin = sin(Tmp);
+	Tmp = v[1];
+
+	// Point->z = Cos * Tmp - Sin * Point->x;
+	v[1] = Cos * Tmp - Sin * v[0];
+	// Point->x = Sin * Tmp + Cos * Point->x;
+	v[0] = Sin * Tmp + Cos * v[0];
     return v;
 }
 
