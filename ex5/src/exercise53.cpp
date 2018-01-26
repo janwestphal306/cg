@@ -93,10 +93,10 @@ bool Exercise53::initialize(Camera &camera)
 	m_vao.create();
 	m_vao.bind();
 
-	// glFrontFace(GL_CW);
+	glFrontFace(GL_CW);
 	// TODO: Replace the dummy triangle with the geometry of the cube.
 
-	m_vertices.resize(12);
+	m_vertices.resize(24);
 	int index = -1;
 	float r = 1.0f;
 	// front
@@ -106,19 +106,19 @@ bool Exercise53::initialize(Camera &camera)
 	m_vertices[++index] = QVector3D(-r, r, r);
 	
 	// right
-	/*
+	
 	m_vertices[++index] = QVector3D(r, -r, r);
 	m_vertices[++index] = QVector3D(r, -r, -r);
 	m_vertices[++index] = QVector3D(r, r, -r);
 	m_vertices[++index] = QVector3D(r, r, r);
-	*/
+	
 	// back
-	/*
+	
 	m_vertices[++index] = QVector3D(r, -r, -r);
 	m_vertices[++index] = QVector3D(-r, -r, -r);
 	m_vertices[++index] = QVector3D(-r, r, -r);
 	m_vertices[++index] = QVector3D(r, r, -r);
-	*/
+	
 	// left
 	
 	m_vertices[++index] = QVector3D(-r, -r, -r);
@@ -127,12 +127,12 @@ bool Exercise53::initialize(Camera &camera)
 	m_vertices[++index] = QVector3D(-r, r, -r);
 	
 	// bottom
-	/*
+	
 	m_vertices[++index] = QVector3D(-r, -r, -r);
 	m_vertices[++index] = QVector3D(r, -r, -r);
 	m_vertices[++index] = QVector3D(r, -r, r);
 	m_vertices[++index] = QVector3D(-r, -r, r);
-	*/
+	
 	//top
 	m_vertices[++index] = QVector3D(-r, r, r);
 	m_vertices[++index] = QVector3D(r, r, r);
