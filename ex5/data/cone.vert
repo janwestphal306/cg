@@ -1,0 +1,16 @@
+#version 150
+
+uniform mat4 viewprojection;
+
+in vec3 in_vertex;
+in vec3 in_normal;
+
+out vec4 vertex;
+out vec3 normal;
+
+void main()
+{
+    gl_Position = viewprojection * vec4(in_vertex, 1.0);
+    vertex = vec4(in_vertex, 1.0);
+    normal = in_normal;
+}

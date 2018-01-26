@@ -1,0 +1,16 @@
+#version 400
+
+// TODO: Define appropriate parameters for output layout specification.
+// layout (...) out;
+
+uniform float animationFrame;
+in vec3 v_vertex[];
+
+out vec3 tc_vertex[];
+
+void main()
+{
+	// TODO: Pass the input vertices from v_vertex[] to the output vertices tc_vertex[].
+	// Set the inner and outer tessellation levels to the value of animationFrame.
+	// Note: Take care of the current invocation ID provided by OpenGL.
+}

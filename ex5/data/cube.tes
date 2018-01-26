@@ -1,0 +1,14 @@
+#version 400
+
+// TODO: Define appropriate parameters for input layout specification.
+// layout (...) in;
+
+in vec3 tc_vertex[];
+
+out vec3 te_vertex;
+
+void main()
+{
+	// TODO: Interpolate the output vertex te_vertex by using the output vertices from tc_vertex[]
+	// and the OpenGL tessellation coordinate. Normalize the vertex to a fixed length as well.
+}
