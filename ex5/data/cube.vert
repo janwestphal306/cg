@@ -9,5 +9,5 @@ void main()
 	v_vertex = in_vertex;
 
 	// TODO: Comment out this line when the geometry shaders is used again.
-	gl_Position = vec4(v_vertex, 1.0);
+	// gl_Position = vec4(v_vertex, 1.0);
 }

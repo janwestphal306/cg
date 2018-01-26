@@ -16,17 +16,23 @@ void main()
 {
 	// TODO: Calculate the per patch normal by using the input vertices te_vertex[].
 	// Use the calculated and transformed normal for all vertices of the ouput triangle.
+	vec3 A = te_vertex[2] - te_vertex[0];
+    vec3 B = te_vertex[1] - te_vertex[0];
+    g_normal = normalMatrix * normalize(cross(A, B));
 
 	g_vertex = view * vec4(te_vertex[0], 1.0);
 	gl_Position = viewprojection * vec4(te_vertex[0], 1.0);
+	g_normal = normalMatrix * normalize(cross(A, B));
 	EmitVertex();
 
 	g_vertex = view * vec4(te_vertex[1], 1.0);
 	gl_Position = viewprojection * vec4(te_vertex[1], 1.0);
+	g_normal = normalMatrix * normalize(cross(A, B));
 	EmitVertex();
 
 	g_vertex = view * vec4(te_vertex[2], 1.0);
 	gl_Position = viewprojection * vec4(te_vertex[2], 1.0);
+	g_normal = normalMatrix * normalize(cross(A, B));
 	EmitVertex();
 
 	EndPrimitive();
