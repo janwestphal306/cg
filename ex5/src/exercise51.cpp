@@ -60,12 +60,9 @@ bool Exercise51::initialize(Camera &camera)
 	m_program->bind();
 
 	//TODO: Create VAO & VBOs
+	// Die VBOs werden jedesmal in updateCone erstellt und gebunden,
+	// da andernfalls ab 45 Flächen zu Artefakten kommt.
 	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	glGenBuffers(2, vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 
 	updateCone();
 
@@ -94,8 +91,8 @@ void Exercise51::render(const Camera &camera)
 
 	// aufräumen
 	// glDeleteVertexArrays(1, &vao);
-	// glBindVertexArray(0);
-	// glUseProgram(0);
+	glBindVertexArray(0);
+	glUseProgram(0);
 
 	if (m_wireframeModeEnabled)
 	{
@@ -123,15 +120,23 @@ void Exercise51::updateCone()
 	assert(m_lateralSurfaces >= 3);
 
 	//TODO: Update buffer content
+	glBindVertexArray(vao);
+
+	glGenBuffers(2, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+
 	Surface *surfaces = (Surface*)calloc(SURFACES, sizeof(Surface));
-	Surface *col = (Surface*)calloc(SURFACES * 9, sizeof(Surface));
+	Surface *normales = (Surface*)calloc(SURFACES, sizeof(Surface));
 
 	GLfloat r = 1.0f, h = 2.0f;
-	Vertex startVertex = Vertex(), top = Vertex(), center = Vertex();
+	Vertex startVertex = Vertex(), top = Vertex(), center = Vertex(), n_top = Vertex(), n_center = Vertex();
 
 	setVertex(&startVertex, r, 0.0f, 0.0f);
 	setVertex(&top, 0.0f, h, 0.0f);
 	setVertex(&center, 0, 0, 0);
+	setVertex(&n_top, 0, 1, 0);
+	setVertex(&n_center, 0, -1, 0);
 
 	Vertex lastVertex = startVertex;
 
@@ -143,42 +148,36 @@ void Exercise51::updateCone()
 		setVertex(&vertex, x, 0.0f, z);
 
 		Surface surface = Surface();
+		// lateral
 		setSurface(&surface, &lastVertex, &vertex, &top);
 		surfaces[(i - 1) * 2] = surface;
-
-		setSurface(&surface, &lastVertex, &vertex, &center);
+		// bottom
+		setSurface(&surface, &lastVertex, &center, &vertex);
 		surfaces[(i - 1) * 2 + 1] = surface;
+	
+		QVector3D v1 = QVector3D(vertex.x - lastVertex.x, vertex.y - lastVertex.y, vertex.z - lastVertex.z);
+		QVector3D v2 = QVector3D(vertex.x - top.x, vertex.y - top.y, vertex.z - top.z);
+		QVector3D n = QVector3D::crossProduct(v1, v2).normalized();
 
-		Vertex color1 = Vertex();
-		// does not work yet
-		setVertex(&color1, ratio, ratio, ratio);
-		Vertex color2 = Vertex();
-		setVertex(&color2, 0, 0, 0);
-
-		setSurface(&surface, &color1, &color1, &color1);
-		col[(i - 1) * 2] = surface;
-
-		setSurface(&surface, &color2, &color2, &color2);
-		col[(i - 1) * 2 + 1] = surface;
+		Vertex n_vertex = Vertex();
+		setVertex(&n_vertex, n.x(), n.y(), n.z());
+		// lateral
+		setSurface(&surface, &n_vertex, &n_vertex, &n_vertex);
+		normales[(i - 1) * 2] = surface;
+		// bottom
+		setSurface(&surface, &n_center, &n_center, &n_center);
+		normales[(i - 1) * 2 + 1] = surface;
 
 		lastVertex = vertex;
 	}
-	/*
-	qDebug() << "SIZE of Surfaces" << sizeof(Surface) << sizeof(surfaces);
-	for (int i = 0; i < m_lateralSurfaces; i++) {
-	for (int j = 0; j < 3; j++) {
-	qDebug() << surfaces[i].vertices[j].x << surfaces[i].vertices[j].y << surfaces[i].vertices[j].z;
-	}
-	qDebug() << "";
-	}
-	*/
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, SURFACES * sizeof(Surface), surfaces, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, SURFACES * sizeof(Surface), col, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, SURFACES * sizeof(Surface), normales, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(1);
 
@@ -201,12 +200,10 @@ bool Exercise51::onKeyPressed(QKeyEvent *event, Camera &camera)
 		case '1':
 			camera.setCenter(QVector3D(0.0f, 1.0f, 0.0f));
 			camera.setEye(QVector3D(0.0f, 2.0f, 6.0f));
-			glFrontFace(GL_CW);
 			break;
 		case '2':
 			camera.setCenter(QVector3D(0.0f, 1.0f, 0.0f));
 			camera.setEye(QVector3D(0.0f, -5.0f, 0.1f));
-			glFrontFace(GL_CCW);
 			break;
 		case Qt::Key_Plus:
 			m_lateralSurfaces++;

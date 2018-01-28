@@ -11,8 +11,8 @@ out vec3 tc_vertex[];
 void main()
 {
 	// TODO: Pass the input vertices from v_vertex[] to the output vertices tc_vertex[].
-	// for (int i = 0; i < out; i++) {
-	//	tc_vertex[i] = vec3(v_vertex[i]);
+	// for (int i = 0; i < 4; i++) {
+	// 	tc_vertex[i] = vec3(v_vertex[i]);
 	//}
 	tc_vertex[gl_InvocationID] = v_vertex[gl_InvocationID];
 
@@ -20,10 +20,17 @@ void main()
 	// Note: Take care of the current invocation ID provided by OpenGL.
 
 	if (gl_InvocationID == 0) {
+		//gl_TessLevelInner[0] = animationFrame;
+        //gl_TessLevelOuter[0] = animationFrame;
+        //gl_TessLevelOuter[1] = animationFrame;
+        //gl_TessLevelOuter[2] = animationFrame;
+		
 		gl_TessLevelInner[0] = animationFrame;
+		gl_TessLevelInner[1] = animationFrame;
         gl_TessLevelOuter[0] = animationFrame;
         gl_TessLevelOuter[1] = animationFrame;
         gl_TessLevelOuter[2] = animationFrame;
+        gl_TessLevelOuter[3] = animationFrame;
 	}
 
 	
